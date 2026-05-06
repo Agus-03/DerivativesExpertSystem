@@ -1,0 +1,4 @@
+experta
+sympy
+streamlit
+frozendict==1.2
