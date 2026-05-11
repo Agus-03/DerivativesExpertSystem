@@ -75,12 +75,17 @@ class DerivadorExperto(KnowledgeEngine):
 
     @Rule(Operacion(tipo='Pow', base='x', exp=MATCH.n))
     def regla_potencia(self, n):
-        print(f"-> [ATÓMICA] Potencia: d/dx(x^{n}) = {n}x^{int(n)-1}")
+        # Convertimos n a float para manejar negativos y decimales
+        n_val = float(n)
+        if n_val == 0:
+            print("-> [ATÓMICA] Potencia 0: d/dx(x^0) = 0")
+        else:
+            print(f"-> [ATÓMICA] Potencia detectada: {n}x^({n_val-1})")
 
     @Rule(Operacion(tipo='Identidad'))
     def regla_x(self):
         print("-> [ATÓMICA] Identidad: d/dx(x) = 1")
 
-    @Rule(Operacion(tipo='Constante'))
-    def regla_c(self):
-        print("-> [ATÓMICA] Constante: d/dx(c) = 0")
+    @Rule(Operacion(tipo='Constante', valor=MATCH.v))
+    def regla_c_negativa(self, v):
+        print(f"-> [ATÓMICA] Constante ({v}): d/dx(c) = 0")

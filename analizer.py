@@ -5,9 +5,26 @@ def analizar_funcion(engine, texto):
     x = sp.Symbol('x')
     try:
         expr = sp.sympify(texto)
+
+        # 2. Verificar división por cero (evaluación simbólica)
+        # Si la expresión tiene un denominador que es 0, SymPy suele lanzar error aquí
+        if expr.is_infinite:
+            print("ERROR: La función tiende al infinito o tiene una división por cero.")
+            return
+
         # Recorremos el árbol de la función
         for nodo in sp.preorder_traversal(expr):
             tipo = type(nodo).__name__
+            # --- Soporte para Números Negativos ---
+            # Si es un número negativo, lo declaramos como constante
+            if nodo.is_Number:
+                if nodo == expr: # Si la función es solo un número (ej: -5)
+                    engine.declare(Operacion(tipo='Constante', valor=float(nodo)))
+                continue
+
+            # --- Detección de Divisiones ---
+            if tipo == 'Pow' and nodo.args[1].is_Number and nodo.args[1] < 0:
+                engine.declare(Operacion(tipo='Div'))
             if tipo == 'Add':
                 engine.declare(Operacion(tipo='Add'))
             elif tipo == 'Mul':
@@ -36,5 +53,7 @@ def analizar_funcion(engine, texto):
         derivada = sp.diff(expr, x)
         print(f"SOLUCION_FINAL:{derivada}")
         #print(f"\nRESULTADO MATEMÁTICO: {sp.diff(expr, x)}")
+    except ZeroDivisionError:
+        print("ERROR: División por cero detectada.")
     except Exception as e:
         print(f"Error: {e}")

@@ -2,6 +2,7 @@ import streamlit as st
 from rules import DerivadorExperto
 from analizer import analizar_funcion
 import io
+import sympy as sp
 from contextlib import redirect_stdout
 
 # Configuración estética de la página
@@ -18,8 +19,9 @@ with st.sidebar:
     st.header("Guía de Uso")
     st.markdown("""
     - **Multiplicación:** `3*x`
-    - **División:** `(3x)/(4+x)`
-    - **Funciones:** `sin(x)`, `cos(x)`, `exp(x)`, `log(x, base)`, `ln(x)`
+    - **División:** `(3*x)/(4+x)`
+    - **Funciones:** `sin(x)`, `cos(x)`, `exp(x)`, `log(x, base)`, `ln(x)`, `tan(x)`
+    - **Negativos:** `x*(-3)*x^2` 
     """)
     st.divider()
     st.caption("Proyecto de Sistemas Basados en Conocimiento")
@@ -49,24 +51,36 @@ if st.button("Analizar y Derivar"):
         
         # Procesamos la salida para mostrarla bonita
         if salida_pasos:
-            pasos_visibles = []
             resultado_final = ""
+            hubo_error = False
 
-            # Separamos la paja del trigo
+            # Procesamos línea por línea la salida del motor
             for linea in salida_pasos.split('\n'):
-                if "SOLUCION_FINAL:" in linea:
+                if "ERROR:" in linea:
+                    st.error(linea.replace("ERROR:", "❌"))
+                    hubo_error = True
+                    break
+                elif "SOLUCION_FINAL:" in linea:
                     resultado_final = linea.split("SOLUCION_FINAL:")[-1].strip()
                 elif "[RECURSIVA]" in linea:
                     st.warning(linea)
                 elif "[ATÓMICA]" in linea:
                     st.success(linea)
 
-            # Si encontramos el resultado, lo mostramos grande y bonito
-            if resultado_final:
+            # 4. Renderizado del Resultado Final en LaTeX
+            if resultado_final and not hubo_error:
                 st.divider()
                 st.subheader("✅ Resultado Final")
-                # Limpiamos el formato para que LaTeX no se rompa con los asteriscos
-                formato_latex = resultado_final.replace("**", "^").replace("*", " \cdot ")
-                st.latex(formato_latex)
-            else:
-                st.error("❌ El motor procesó las reglas pero no devolvió un resultado final.")
+                try:
+                    # Convertimos a formato LaTeX real de SymPy para que se vea pro
+                    expr_sympy = sp.sympify(resultado_final)
+                    st.latex(sp.latex(expr_sympy))
+                except:
+                    # Fallback si SymPy falla al parsear el resultado
+                    st.code(resultado_final)
+    else:
+        st.warning("⚠️ Por favor, ingresa una función.")
+
+# Pie de página
+st.divider()
+st.caption("Desarrollado con Python, SymPy y Experta.")
